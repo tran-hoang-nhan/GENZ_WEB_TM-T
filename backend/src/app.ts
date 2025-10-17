@@ -1,0 +1,41 @@
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import Redis from 'ioredis';
+import productsRouter from './routes/products';
+import healthRouter from './routes/health';
+import authRouter from './routes/auth';
+import ordersRouter from './routes/orders';
+import debugRouter from './routes/debug';
+
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/genz';
+const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
+const REDIS_PORT = Number(process.env.REDIS_PORT || 6379);
+
+// Connect to MongoDB
+mongoose
+  .connect(MONGO_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('Mongo connection error:', err));
+
+// Redis client
+export const redis = new Redis({ host: REDIS_HOST, port: REDIS_PORT });
+redis.on('error', (err) => console.error('Redis error', err));
+
+// Mount routes
+app.use(process.env.API_PREFIX || '/api', productsRouter);
+app.use(process.env.API_PREFIX || '/api', authRouter);
+app.use(process.env.API_PREFIX || '/api', ordersRouter);
+if (process.env.DEBUG_KEY) {
+  app.use(process.env.API_PREFIX || '/api', debugRouter);
+}
+app.use('/', healthRouter);
+
+export default app;

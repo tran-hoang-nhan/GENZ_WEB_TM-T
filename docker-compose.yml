@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - '4000:4000'
+    environment:
+      # MONGO_URI can be provided via host environment or .env.backend file.
+      - MONGO_URI
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=4000
+      - API_PREFIX=/api
+      - JWT_SECRET
+      - DEBUG_KEY
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+  
