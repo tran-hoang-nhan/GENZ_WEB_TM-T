@@ -339,11 +339,23 @@ export function ProductDetailPage({ product, onBack, onProductClick }: ProductDe
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard
+                <div
                   key={relatedProduct.id}
-                  product={relatedProduct}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onProductClick(relatedProduct)}
-                />
+                  onKeyDown={(e) => {
+                    if ((e as any).key === 'Enter' || (e as any).key === ' ') {
+                      onProductClick(relatedProduct)
+                    }
+                  }}
+                  className="cursor-pointer"
+                >
+                  <ProductCard
+                    product={relatedProduct} onQuickView={function (product: Product): void {
+                      throw new Error('Function not implemented.')
+                    } }                  />
+                </div>
               ))}
             </div>
           </div>
