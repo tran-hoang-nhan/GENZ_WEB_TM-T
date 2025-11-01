@@ -1,21 +1,26 @@
-import { Schema, model, Document } from 'mongoose';
+// MongoDB collection: products
+// No longer using Mongoose models - using native MongoDB driver
+// Define structure in comments for reference
 
-export interface IProduct extends Document {
-  name: string;
-  description?: string;
-  price: number;
-  brand?: string;
-  images?: string[];
-  stock?: number;
+/*
+Collection: products
+{
+  _id: ObjectId,
+  name: string (required),
+  description?: string,
+  price: number (required),
+  brand?: string,
+  image?: string,
+  images?: string[],
+  category?: string,
+  rating?: number,
+  features?: string[],
+  color?: string[],
+  size?: string[],
+  stock?: number (default: 0),
+  weight?: string,
+  certification?: string[],
+  createdAt: Date,
+  updatedAt: Date
 }
-
-const ProductSchema = new Schema<IProduct>({
-  name: { type: String, required: true },
-  description: String,
-  price: { type: Number, required: true },
-  brand: String,
-  images: [String],
-  stock: { type: Number, default: 0 },
-});
-
-export default model<IProduct>('Product', ProductSchema);
+*/

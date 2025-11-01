@@ -342,7 +342,7 @@ export function ProductDetailPage({ product, onBack, onProductClick }: ProductDe
                 <ProductCard
                   key={relatedProduct.id}
                   product={relatedProduct}
-                  onClick={() => onProductClick(relatedProduct)}
+                  onQuickView={() => onProductClick(relatedProduct)}
                 />
               ))}
             </div>

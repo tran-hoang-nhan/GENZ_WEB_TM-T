@@ -27,17 +27,17 @@ export async function apiFetch(path: string, options: FetchOptions = {}) {
 }
 
 export const products = {
-  list: () => apiFetch('/products'),
-  create: (payload: any) => apiFetch('/products', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } }),
+  list: () => apiFetch('api/products'),
+  create: (payload: any) => apiFetch('api/products', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } }),
 };
 
 export const auth = {
-  register: (payload: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } }),
+  register: (payload: any) => apiFetch('api/auth/register', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } }),
   login: (payload: any) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } }),
 };
 
 export const orders = {
-  list: () => apiFetch('/orders'),
-  get: (id: string) => apiFetch(`/orders/${id}`),
-  updateStatus: (id: string, status: string) => apiFetch(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }), headers: { 'Content-Type': 'application/json' } })
+  list: () => apiFetch('api/orders'),
+  get: (id: string) => apiFetch(`api/orders/${id}`),
+  updateStatus: (id: string, status: string) => apiFetch(`api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }), headers: { 'Content-Type': 'application/json' } })
 }

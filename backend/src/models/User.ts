@@ -1,17 +1,18 @@
-import { Schema, model, Document } from 'mongoose'
+// MongoDB collection: users
+// No longer using Mongoose models - using native MongoDB driver
+// Define structure in comments for reference
 
-export interface IUser extends Document {
-  email: string
-  password: string
-  name?: string
-  role?: string
+/*
+Collection: users
+{
+  _id: ObjectId,
+  email: string (required, unique),
+  password: string (required, hashed),
+  name?: string,
+  phone?: string,
+  address?: string,
+  role: 'user' | 'admin' (default: 'user'),
+  createdAt: Date,
+  updatedAt: Date
 }
-
-const UserSchema = new Schema<IUser>({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  name: String,
-  role: { type: String, default: 'user' }
-})
-
-export default model<IUser>('User', UserSchema)
+*/

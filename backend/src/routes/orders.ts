@@ -1,5 +1,6 @@
 import { Router } from 'express'
-import Order from '../models/Order'
+import { ObjectId } from 'mongodb'
+import { db } from '../app'
 import { requireAdmin } from '../middleware/auth'
 
 const router = Router()
@@ -7,7 +8,8 @@ const router = Router()
 // GET /api/orders
 router.get('/orders', async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 }).lean()
+    const ordersCollection = db.collection('orders')
+    const orders = await ordersCollection.find({}).sort({ createdAt: -1 }).toArray()
     res.json({ data: orders })
   } catch (err) {
     console.error(err)
@@ -19,8 +21,13 @@ router.get('/orders', async (req, res) => {
 router.post('/orders', requireAdmin, async (req, res) => {
   try {
     const data = req.body
-    const order = await Order.create(data)
-    res.json({ data: order })
+    const ordersCollection = db.collection('orders')
+    const result = await ordersCollection.insertOne({
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+    res.status(201).json({ id: result.insertedId, ...data })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to create order' })
@@ -30,7 +37,8 @@ router.post('/orders', requireAdmin, async (req, res) => {
 // GET /api/orders/:id
 router.get('/orders/:id', async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).lean()
+    const ordersCollection = db.collection('orders')
+    const order = await ordersCollection.findOne({ _id: new ObjectId(req.params.id) })
     if (!order) return res.status(404).json({ error: 'Order not found' })
     res.json({ data: order })
   } catch (err) {
@@ -43,9 +51,14 @@ router.get('/orders/:id', async (req, res) => {
 router.patch('/orders/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body
-    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true }).lean()
-    if (!order) return res.status(404).json({ error: 'Order not found' })
-    res.json({ data: order })
+    const ordersCollection = db.collection('orders')
+    const result = await ordersCollection.findOneAndUpdate(
+      { _id: new ObjectId(req.params.id) },
+      { $set: { status, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    )
+    if (!result.value) return res.status(404).json({ error: 'Order not found' })
+    res.json({ data: result.value })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to update status' })

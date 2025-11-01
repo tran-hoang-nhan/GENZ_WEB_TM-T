@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
+import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import Redis from 'ioredis';
 import productsRouter from './routes/products';
@@ -15,15 +15,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/genz';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 const REDIS_PORT = Number(process.env.REDIS_PORT || 6379);
 
+// MongoDB client
+let mongoClient: MongoClient;
+export let db: any;
+
 // Connect to MongoDB
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('Mongo connection error:', err));
+async function connectMongo() {
+  try {
+    mongoClient = new MongoClient(MONGO_URI);
+    await mongoClient.connect();
+    db = mongoClient.db('genz');
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  }
+}
+
+connectMongo();
 
 // Redis client
 export const redis = new Redis({ host: REDIS_HOST, port: REDIS_PORT });
