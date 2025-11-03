@@ -23,12 +23,19 @@ export function UserProfile({ onBack }: UserProfileProps) {
     }).format(price)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A'
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return 'Invalid Date'
+      return date.toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch (err) {
+      return 'Invalid Date'
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -156,7 +163,7 @@ export function UserProfile({ onBack }: UserProfileProps) {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="text-sm text-gray-500">Mã đơn hàng</p>
-                            <p>#{order.id.slice(-6).toUpperCase()}</p>
+                            <p>{order.orderId}</p>
                           </div>
                           <Badge className={getStatusColor(order.status)}>
                             {getStatusText(order.status)}

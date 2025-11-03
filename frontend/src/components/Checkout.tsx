@@ -8,8 +8,9 @@ import { Textarea } from './ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Separator } from './ui/separator'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { ArrowLeft, CreditCard, Truck, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner@2.0.3'
+import { ArrowLeft, CreditCard, Truck, CheckCircle2, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { orders, payments } from '../lib/api'
 
 interface CheckoutProps {
   onBack: () => void
@@ -20,6 +21,8 @@ export function Checkout({ onBack, onSuccess }: CheckoutProps) {
   const { cart, getTotalPrice, clearCart } = useCart()
   const { user, addOrder } = useAuth()
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [orderId, setOrderId] = useState('')
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -50,7 +53,7 @@ export function Checkout({ onBack, onSuccess }: CheckoutProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.fullName || !formData.phone || !formData.address) {
@@ -58,34 +61,87 @@ export function Checkout({ onBack, onSuccess }: CheckoutProps) {
       return
     }
 
-    // Save order
-    addOrder({
-      userId: user?.id || 'guest',
-      userName: formData.fullName,
-      userEmail: formData.email || 'N/A',
-      userPhone: formData.phone,
-      items: cart.map(item => ({
-        productId: item.id,
-        productName: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        color: item.selectedColor,
-        size: item.selectedSize
-      })),
-      totalAmount: getTotalPrice(),
-      status: 'pending',
-      paymentMethod: formData.paymentMethod as 'cod' | 'banking',
-      shippingAddress: formData.address,
-      note: formData.note
-    })
+    if (!user?.userId) {
+      toast.error('Vui lòng đăng nhập để tiếp tục!')
+      return
+    }
 
-    setOrderPlaced(true)
-    toast.success('Đặt hàng thành công!')
-    
-    // Clear cart after 2 seconds
-    setTimeout(() => {
-      clearCart()
-    }, 2000)
+    if (cart.length === 0) {
+      toast.error('Giỏ hàng trống!')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // Step 1: Create order on backend
+      const orderResponse = await orders.create({
+        userId: user.userId,
+        items: cart.map(item => ({
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          color: item.selectedColor,
+          size: item.selectedSize
+        })),
+        customerInfo: {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address
+        },
+        totalAmount: getTotalPrice(),
+        paymentMethod: formData.paymentMethod,
+        notes: formData.note
+      })
+
+      const createdOrderId = orderResponse.data.orderId
+      setOrderId(createdOrderId)
+
+      // Step 2: Create payment record
+      await payments.create({
+        orderId: createdOrderId,
+        userId: user.userId,
+        amount: getTotalPrice(),
+        method: formData.paymentMethod
+      })
+
+      // Step 3: Save to localStorage (backup)
+      addOrder({
+        orderId: createdOrderId,
+        userId: user.userId,
+        userName: formData.fullName,
+        userEmail: formData.email || 'N/A',
+        userPhone: formData.phone,
+        items: cart.map(item => ({
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          color: item.selectedColor,
+          size: item.selectedSize
+        })),
+        totalAmount: getTotalPrice(),
+        status: 'pending',
+        paymentMethod: formData.paymentMethod as 'cod' | 'banking',
+        shippingAddress: formData.address,
+        note: formData.note
+      })
+
+      setOrderPlaced(true)
+      toast.success('Đặt hàng thành công!')
+
+      // Clear cart after 2 seconds
+      setTimeout(() => {
+        clearCart()
+      }, 2000)
+    } catch (err) {
+      console.error('Order error:', err)
+      toast.error('Lỗi khi đặt hàng. Vui lòng thử lại!')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (orderPlaced) {
@@ -110,7 +166,7 @@ export function Checkout({ onBack, onSuccess }: CheckoutProps) {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Mã đơn hàng:</span>
-                    <span>#{Math.floor(Math.random() * 1000000)}</span>
+                    <span>{orderId}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tổng tiền:</span>
@@ -366,10 +422,18 @@ export function Checkout({ onBack, onSuccess }: CheckoutProps) {
 
               <Button
                 size="lg"
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white"
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white disabled:opacity-50"
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Đặt Hàng
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Đặt Hàng'
+                )}
               </Button>
 
               <p className="text-xs text-gray-500 text-center">

@@ -1,5 +1,6 @@
 export interface User {
   id: string
+  userId: string
   email: string
   name: string
   role: 'admin' | 'user'
@@ -8,6 +9,7 @@ export interface User {
 
 export interface Order {
   id: string
+  orderId: string
   userId: string
   userName: string
   userEmail: string

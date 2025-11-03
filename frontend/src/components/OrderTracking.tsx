@@ -123,7 +123,7 @@ export function OrderTracking({ orders, userEmail }: OrderTrackingProps) {
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">Đơn hàng #{order.id}</CardTitle>
+                    <CardTitle className="text-lg">Đơn hàng {order.orderId}</CardTitle>
                     <Badge className={statusInfo.color}>
                       <StatusIcon className="w-3 h-3 mr-1" />
                       {statusInfo.label}
