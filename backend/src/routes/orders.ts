@@ -14,7 +14,6 @@ router.get('/orders', async (req, res) => {
     // Transform to match frontend Order interface
     const transformedOrders = orders.map((order: any) => ({
       id: order._id.toString(),
-      orderId: order.orderId,
       userId: order.userId, 
       userName: order.customerInfo?.fullName || '',
       userEmail: order.customerInfo?.email || '',
@@ -62,22 +61,13 @@ router.post('/orders', async (req, res) => {
       size: item.selectedSize || item.size
     }))
 
-    // Get next orderId from counter
-    const countersCollection = db.collection('counters')
-    const counter = await countersCollection.findOneAndUpdate(
-      { _id: 'orderId' },
-      { $inc: { seq: 1 } },
-      { upsert: true, returnDocument: 'after' }
-    )
-    const orderId = `ORD-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(counter.value?.seq || 1).padStart(3, '0')}`
     const ordersCollection = db.collection('orders')
     const result = await ordersCollection.insertOne({
-      orderId,
       userId,
       items: enrichedItems,
       customerInfo: {
         ...customerInfo,
-        userId  // Thêm userId vào customerInfo
+        userId
       },
       totalAmount,
       shippingCost: 0,
@@ -91,7 +81,6 @@ router.post('/orders', async (req, res) => {
 
     res.status(201).json({ 
       data: { 
-        orderId, 
         _id: result.insertedId, 
         userId,
         totalAmount,
@@ -132,59 +121,6 @@ router.patch('/orders/:id/status', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to update status' })
-  }
-})
-
-// POST /api/payments (User create payment)
-router.post('/payments', async (req, res) => {
-  try {
-    const { orderId, userId, amount, method } = req.body
-
-    // Validate
-    if (!orderId || !userId || !amount || !method) {
-      return res.status(400).json({ error: 'Missing required fields' })
-    }
-
-    // Get next paymentId from counter
-    const countersCollection = db.collection('counters')
-    const counter = await countersCollection.findOneAndUpdate(
-      { _id: 'paymentId' },
-      { $inc: { seq: 1 } },
-      { upsert: true, returnDocument: 'after' }
-    )
-    const paymentId = `PAY-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(counter.value?.seq || 1).padStart(3, '0')}`
-
-    const paymentsCollection = db.collection('payments')
-    const result = await paymentsCollection.insertOne({
-      paymentId,
-      orderId,
-      userId,
-      amount,
-      method,
-      status: method === 'cod' ? 'pending' : 'completed',
-      transactionId: `TXN-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
-
-    // Update order with payment info
-    const ordersCollection = db.collection('orders')
-    await ordersCollection.updateOne(
-      { orderId },
-      { $set: { paymentStatus: 'paid', updatedAt: new Date() } }
-    )
-
-    res.status(201).json({ 
-      data: { 
-        paymentId,
-        _id: result.insertedId,
-        orderId,
-        status: method === 'cod' ? 'pending' : 'completed'
-      } 
-    })
-  } catch (err) {
-    console.error('Create payment error:', err)
-    res.status(500).json({ error: 'Failed to create payment' })
   }
 })
 
